@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from . import models, schemas, crud, auth, admin_routes, customer_routes
+from . import models, schemas, crud, auth, customer_routes
 from .database import engine, get_db
 from .auth import create_access_token
 from .config import ACCESS_TOKEN_EXPIRE_MINUTES
@@ -12,10 +12,9 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Marketplace API")
 
-# CORS for frontend and admin frontend
+# CORS for customer frontend only
 origins = [
     "http://localhost:3000",  # customer frontend
-    "http://localhost:3001",  # admin frontend
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -25,11 +24,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(admin_routes.router)
+# Include only customer router
 app.include_router(customer_routes.router)
 
-# Token endpoint
+# Token endpoint (for customer login)
 @app.post("/token", response_model=schemas.UserOut)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = auth.authenticate_user(db, form_data.username, form_data.password)
